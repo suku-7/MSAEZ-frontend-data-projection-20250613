@@ -1,5 +1,4 @@
 <template>
-
     <v-card style="width:450px;" outlined>
         <template slot="progress">
             <v-progress-linear
@@ -23,7 +22,9 @@
             <Number label="Amount" v-model="value.amount" :editMode="editMode"/>
             <String label="Status" v-model="value.status" :editMode="editMode"/>
             <String label="Address" v-model="value.address" :editMode="editMode"/>
-        </v-card-text>
+
+            <Inventory v-if="inventory" v-model="inventory" :editMode="editMode"></Inventory> 
+            </v-card-text>
 
         <v-card-actions>
             <v-spacer></v-spacer>
@@ -76,16 +77,17 @@
             </v-btn>
         </v-snackbar>
     </v-card>
-
 </template>
 
 <script>
     const axios = require('axios').default;
-
+    // Inventory 컴포넌트가 별도의 파일로 존재한다면 아래와 같이 임포트해야 합니다.
+    import Inventory from './Inventory.vue'; // Inventory.vue 파일의 실제 경로에 맞춰 수정
 
     export default {
         name: 'Order',
         components:{
+            Inventory // Inventory 컴포넌트를 등록합니다.
         },
         props: {
             value: [Object, String, Number, Boolean, Array],
@@ -99,7 +101,24 @@
                 timeout: 5000,
                 text: ''
             },
+            inventory: null, // inventory 데이터를 위한 속성 초기화
         }),
+        // created() 훅을 data 밖으로 옮겨 Vue 컴포넌트 옵션의 최상위 레벨에 위치시킵니다.
+        async created(){
+            // value와 productId가 모두 존재하는 경우에만 API 호출
+            if (this.value && this.value.productId) {
+                try {
+                    const result = await axios.get('/inventories/' + this.value.productId);
+                    this.inventory = result.data;
+                } catch (error) {
+                    console.error("재고 정보를 가져오는 데 실패했습니다:", error);
+                    this.snackbar.status = true;
+                    this.snackbar.text = "재고 정보를 가져오지 못했습니다.";
+                }
+            } else {
+                console.warn("ProductId가 유효하지 않아 재고 정보를 가져올 수 없습니다.");
+            }
+        },
         computed:{
         },
         methods: {
@@ -196,4 +215,3 @@
         },
     }
 </script>
-
